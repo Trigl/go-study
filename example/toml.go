@@ -24,33 +24,21 @@ type HttpConfig struct {
 }
 
 func DecodeConfig(md toml.MetaData, primValue toml.Primitive) (c interface{}, err error) {
-	c = make(map[string]HttpConfig)
+	c = new(HttpConfig)
 	if err = md.PrimitiveDecode(primValue, c); err != nil {
 		return nil, err
 	}
 	// 类型转换
-	m := c.(map[string]HttpConfig)
-	return mapToSlice(m), nil
-}
-
-func mapToSlice(m map[string]HttpConfig) []HttpConfig {
-	s := make([]HttpConfig, 0, len(m))
-	for _, v := range m {
-		s = append(s, v)
-	}
-	return s
+	return c, nil
 }
 
 func main() {
 	content := `
 	[input]
 	type="http"
-	[input.config.1]
+	[input.config]
 	route="/realtime"
 	queueSize=100
-	[input.config.2]
-	route="/unrealtime"
-	queueSize=200
 	`
 	c := new(Config)
 	md, err := toml.Decode(content, c)

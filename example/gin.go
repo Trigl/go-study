@@ -1,8 +1,8 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
+	"github.com/fvbock/endless"
 	"github.com/gin-gonic/gin"
 	"io/ioutil"
 	"net/http"
@@ -20,34 +20,43 @@ func main() {
 	// 初始化引擎
 	engine := gin.Default()
 	// 注册一个路由和处理函数
-	engine.Any("/haha", WebRoot)
-	engine.Any("/hehe", WebRoot)
+	engine.Any("/haha", handler)
+	engine.Any("/hehe", handler)
+
+	// 动态加载 route
+	go func() {
+		time.Sleep(10 * time.Second)
+		fmt.Println("keke")
+		engine.Any("/keke", handler)
+	}()
 	// 绑定端口，然后启动应用
-	engine.Run(":9205")
+	endless.ListenAndServe(":9205", engine)
+
 }
 
-/**
-* 根请求处理函数
-* 所有本次请求相关的方法都在 context 中，完美
-* 输出响应 hello, world
- */
-func WebRoot(context *gin.Context) {
-	fmt.Println(context.Request.RequestURI)
-
+func handler(ctx *gin.Context) {
 	event := new(ProcessorEvent)
 	event.receiveTime = time.Now().UnixNano() / 1e6
-	event.headers = make(map[string]string, len(context.Request.Header))
-	for k, v := range context.Request.Header {
-		event.headers[k] = v[0]
+	header := make(map[string]string, len(ctx.Request.Header))
+	for k, v := range ctx.Request.Header {
+		header[k] = v[0]
 	}
+	event.headers = header
 
-	bodybyte, err := ioutil.ReadAll(context.Request.Body)
-	if err != nil {
-		fmt.Println("err")
+	switch ctx.Request.Method {
+	case "GET":
+		event.body = []byte(ctx.Request.RequestURI)
+	case "POST":
+		body, err := ioutil.ReadAll(ctx.Request.Body)
+		if err != nil {
+			fmt.Println("err")
+			ctx.String(http.StatusBadRequest, "400")
+			return
+		}
+		event.body = body
 	}
-	context.Request.Body = ioutil.NopCloser(bytes.NewBuffer(bodybyte))
-	event.body = bodybyte
-	event.bodyLength = len(bodybyte)
+	event.bodyLength = len(event.body)
 
-	context.String(http.StatusOK, fmt.Sprintf("header=%v,body=%s", event.headers, string(bodybyte)))
+	fmt.Println(event)
+	ctx.String(http.StatusOK, fmt.Sprintf("header=%v,body=%s", event.headers, string(event.body)))
 }
