@@ -45,7 +45,7 @@ func handler(ctx *gin.Context) {
 
 	switch ctx.Request.Method {
 	case "GET":
-		event.body = []byte(ctx.Request.RequestURI)
+		event.body = []byte(ctx.Request.URL.RawQuery)
 	case "POST":
 		body, err := ioutil.ReadAll(ctx.Request.Body)
 		if err != nil {
