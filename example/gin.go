@@ -30,8 +30,13 @@ func main() {
 		engine.Any("/keke", handler)
 	}()
 	// 绑定端口，然后启动应用
-	endless.ListenAndServe(":9205", engine)
+	go endless.ListenAndServe(":9205", engine)
 
+	time.Sleep(100 * time.Millisecond)
+
+	// 获取 routes 基本信息，如 path、method、handler
+	routesInfo := engine.Routes()
+	fmt.Printf("routes info: %v", routesInfo)
 }
 
 func handler(ctx *gin.Context) {
