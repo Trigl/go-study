@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/fvbock/endless"
 	"github.com/gin-gonic/gin"
-	"io/ioutil"
 	"net/http"
 	"time"
 )
@@ -23,6 +22,7 @@ func main() {
 	engine.Any("/haha", handler)
 	engine.Any("/hehe", handler)
 
+	engine.Any("/log/*id", handler)
 	// 动态加载 route
 	go func() {
 		time.Sleep(10 * time.Second)
@@ -32,7 +32,7 @@ func main() {
 	// 绑定端口，然后启动应用
 	go endless.ListenAndServe(":9205", engine)
 
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(100000 * time.Millisecond)
 
 	// 获取 routes 基本信息，如 path、method、handler
 	routesInfo := engine.Routes()
@@ -40,28 +40,5 @@ func main() {
 }
 
 func handler(ctx *gin.Context) {
-	event := new(ProcessorEvent)
-	event.receiveTime = time.Now().UnixNano() / 1e6
-	header := make(map[string]string, len(ctx.Request.Header))
-	for k, v := range ctx.Request.Header {
-		header[k] = v[0]
-	}
-	event.headers = header
-
-	switch ctx.Request.Method {
-	case "GET":
-		event.body = []byte(ctx.Request.URL.RawQuery)
-	case "POST":
-		body, err := ioutil.ReadAll(ctx.Request.Body)
-		if err != nil {
-			fmt.Println("err")
-			ctx.String(http.StatusBadRequest, "400")
-			return
-		}
-		event.body = body
-	}
-	event.bodyLength = len(event.body)
-
-	fmt.Println(event)
-	ctx.String(http.StatusOK, fmt.Sprintf("header=%v,body=%s", event.headers, string(event.body)))
+	ctx.String(http.StatusOK, "hello world")
 }
